@@ -18,7 +18,7 @@ async function main() {
             role: 'system',
             content: `You are a smart personal assistent who answers the asked questions.
                 You have access to following tools:
-                1. searchWeb({query}: {query:string}) // Search the latest information and realtime data on the internet.
+                1. webSearch({query}: {query:string}) // Search the latest information and realtime data on the internet.
                 current date and time: ${new Date().toUTCString()}`,
         },
     ];
@@ -77,10 +77,10 @@ async function main() {
 
             for (const tool of toolCalls) {
                 const functionName = tool.function.name;
-                const functionParams = tool.function.arguments;
+                const functionParams = JSON.parse(tool.function.arguments);
 
                 if (functionName === 'webSearch') {
-                    const toolResult = await webSearch(JSON.parse(functionParams));
+                    const toolResult = await webSearch(functionParams);
 
                     messages.push({
                         tool_call_id: tool.id,
@@ -109,3 +109,4 @@ async function webSearch({ query }) {
     const finalResult = response.results.map(result => result.content).join('\n\n');
     return finalResult;
 }
+
