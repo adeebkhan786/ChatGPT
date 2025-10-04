@@ -7,7 +7,7 @@ input.addEventListener('keyup', handleEnter);
 askBtn.addEventListener('click', handleAsk);
 
 
-function generate(text) {
+async function generate(text) {
     /*
     1. Append message to ui
     2. send it to LLM
@@ -19,26 +19,49 @@ function generate(text) {
     msg.textContent = text;
     chatContrainer?.appendChild(msg);
     input.value = '';
+
+    //call server
+    const assistentMessage = await callServer(text);
+    const asssistentMsgElem = document.createElement('div');
+    asssistentMsgElem.className = "mx-w-fit";
+    asssistentMsgElem.textContent = assistentMessage;
+    chatContrainer?.appendChild(asssistentMsgElem); 
 }
 
 
-function handleEnter(e) {
+async function callServer(inputText) {
+    const response = await fetch('http://localhost:3001/chat', {
+        method: 'POST',
+        headers: {  'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: inputText })
+    });
+
+    if(!response.ok){
+        throw new Error('Error generating the response.');
+    }
+
+    const result = await response.json();
+    return result.message;
+}
+
+
+async function handleEnter(e) {
     if (e.key === 'Enter') {
         const text = input?.value.trim();
         if (!text) {
             return;
         }
 
-        generate(text);
+        await generate(text);
     }
 };
 
 
-function handleAsk(e) {
+async function handleAsk(e) {
     const text = input?.value.trim();
     if (!text) {
         return;
     };
 
-    generate(text);
+    await generate(text);
 }
