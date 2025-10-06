@@ -5,7 +5,9 @@ const askBtn = document.querySelector('#ask');
 
 input.addEventListener('keyup', handleEnter);
 askBtn.addEventListener('click', handleAsk);
-
+const loading = document.createElement('div');
+loading.className = "my-6 animate-pulse";
+loading.textContent = "Thinking...";
 
 async function generate(text) {
     /*
@@ -20,11 +22,14 @@ async function generate(text) {
     chatContrainer?.appendChild(msg);
     input.value = '';
 
+    chatContrainer?.appendChild(loading);
+
     //call server
     const assistentMessage = await callServer(text);
     const asssistentMsgElem = document.createElement('div');
     asssistentMsgElem.className = "mx-w-fit";
     asssistentMsgElem.textContent = assistentMessage;
+    loading.remove();
     chatContrainer?.appendChild(asssistentMsgElem); 
 }
 
