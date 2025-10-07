@@ -16,10 +16,14 @@ app.get('/', (req, res) => {
 
 
 app.post('/chat', async (req, res) => {
-  const { message } = req.body;
+  const { message, threadId } = req.body;
+  //todo: validate message and threadId
+  if(!message || !threadId){
+    return res.status(400).json({ error: 'Invalid request. Message and threadId are required.' });
+  }
   console.log('Received message:', message);
-  const result = await generate(message);
-  res.json({message: result})
+  const result = await generate(message, threadId);
+  return res.json({message: result})
 });
 
 

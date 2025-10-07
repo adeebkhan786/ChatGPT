@@ -2,16 +2,19 @@ import readline from "node:readline/promises";
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
 import { tavily } from "@tavily/core";
-
+import NodeCache from "node-cache";
 
 dotenv.config();
 
 const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-export async function generate(userMessage) {
+const chache = new NodeCache({ stdTTL: 60 * 60 * 24 }); // Cache with 24 hour TTL - standard Time to Live
 
-    const messages = [
+
+export async function generate(userMessage, threadId) {
+
+    const baseMessages = [
         {
             role: 'system',
             // content: `You are a smart personal assistent who answers the asked questions.
@@ -45,6 +48,9 @@ export async function generate(userMessage) {
         },
     ];
 
+
+    const messages = chache.get(threadId) ?? baseMessages;
+
     
 
     messages.push({
@@ -53,7 +59,13 @@ export async function generate(userMessage) {
     });
 
     //LLM React loop for tool calling it stop only when LLM does not send tool_calls in response unless the loop will be continously executing.
+    const MAX_RETRIES = 10;
+    let count = 0;
     while (true) {
+        if (count >= MAX_RETRIES) {
+            return 'I could not find the result, Please try again..';
+        }
+        count++;
         const completions = await groq.chat.completions.create({
             model: 'llama-3.3-70b-versatile',
             temperature: 0,
@@ -85,6 +97,9 @@ export async function generate(userMessage) {
         messages.push(completions.choices[0].message);
         const toolCalls = completions.choices[0].message.tool_calls;
         if (!toolCalls) {
+            //Here we end the  chatbot response
+            chache.set(threadId, messages);
+            console.log("Cache", JSON.stringify(chache?.data));
             return completions.choices[0].message.content;
         }
 
